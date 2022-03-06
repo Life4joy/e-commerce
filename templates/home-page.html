@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    <main>
+        <div class="container">
+
+            <!--Navbar-->
+            <nav class="navbar navbar-expand-lg navbar-dark mdb-color lighten-3 mt-3 mb-5">
+
+                <!-- Navbar brand -->
+                <span class="navbar-brand">Categories:</span>
+
+                <!-- Collapse button -->
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#basicExampleNav"
+                        aria-controls="basicExampleNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Collapsible content -->
+                <div class="collapse navbar-collapse" id="basicExampleNav">
+
+                    <!-- Links -->
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item active">
+                            <a class="nav-link" href="{% url 'home' %}">All</a>
+                        </li>
+                        {% for cat in categories %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'filter' cat.slug %}">{{ cat.title }}</a>
+                            </li>
+                        {% endfor %}
+
+
+                    </ul>
+                    <!-- Links -->
+
+                    <form class="form-inline" id="search-form" method="GET" action="{% url 'search' %}">
+                        {% csrf_token %}
+                        <div class="md-form my-0">
+                            <input class="form-control mr-sm-2" type="text" placeholder="Search" aria-label="Search"
+                                   id="search-input">
+                        </div>
+
+                    </form>
+                </div>
+
+            </nav>
+            <div id="results" class="d-none">
+                <section class="text-center mb-4">
+                    <div class="row wow fadeIn" id="card"></div>
+                </section>
+            </div>
+            <div id="resultbox">
+                <div>
+                    <section class="text-center mb-4">
+                        <div class="row wow fadeIn">
+                            {% for item in object_list %}
+                                <div class="col-lg-3 col-md-6 mb-4">
+
+                                    <div class="card">
+
+                                        <div class="view overlay">
+                                            <img src="https://mdbootstrap.com/img/Photos/Horizontal/E-commerce/Vertical/12.jpg"
+                                                 class="card-img-top"
+                                                 alt="">
+                                            <a href="{{ item.get_absolute_url }}">
+                                                <div class="mask rgba-white-slight"></div>
+                                            </a>
+                                        </div>
+
+                                        <div class="card-body text-center">
+                                            <a href="" class="grey-text">
+                                                <h5>{{ item.category.title }}</h5>
+                                            </a>
+                                            <h5>
+                                                <strong>
+                                                    <a href="{{ item.get_absolute_url }}"
+                                                       class="dark-grey-text">{{ item.title }}
+                                                        <span class="badge badge-pill {{ item.get_label_display }}-color">NEW</span>
+                                                    </a>
+                                                </strong>
+                                            </h5>
+
+                                            <h4 class="font-weight-bold blue-text">
+                                                <strong>
+                                                    {% if item.discount_price %}
+                                                        {{ item.discount_price }}
+                                                    {% else %}
+                                                        {{ item.price }}
+                                                    {% endif %}$</strong>
+                                            </h4>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            {% endfor %}
+
+                        </div>
+                    </section>
+                    {% if page_obj.has_other_pages %}
+                        <nav class="d-flex justify-content-center wow fadeIn">
+                            <ul class="pagination pg-blue">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}"
+                                           aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                            <span class="sr-only">Previous</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+
+                                {% for p in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == p %}
+                                        <li class="page-item active">
+                                            <a class="page-link" href="#">{{ p }}
+                                                <span class="sr-only">(current)</span>
+                                            </a>
+                                        </li>
+                                    {% elif p > page_obj.number|add:-3 and p < page_obj.number|add:3 %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}"
+                                           aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                            <span class="sr-only">Next</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </main>
+    <script>
+        const url = window.location.href
+        const searchForm = document.getElementById('search-form')
+        const searchInput = document.getElementById('search-input')
+        let resultsBox = document.getElementById('resultbox')
+        let results = document.getElementById('results')
+        let card = document.getElementById('card')
+        const csrf = document.getElementsByName('csrfmiddlewaretoken')[0].value
+        console.log(csrf)
+        const sendSearchData = (item) => {
+            $.ajax({
+                type: 'GET',
+                url: 'search/',
+                data: {
+                    'csrfmiddlewaretoken': csrf,
+                    'item': item
+                },
+                success: (res) => {
+                    console.log(res)
+                    const data = res.data
+                    if (Array.isArray(data)) {
+                        data.forEach(item => {
+                            resultsBox.classList.add('d-none')
+                            results.classList.remove('d-none')
+                            console.log(data)
+                            card.innerHTML += `
+                                <div class="col-lg-3 col-md-6 mb-4" >
+                                    <div class="card">
+
+                                        <div class="view overlay">
+                                            <img src="https://mdbootstrap.com/img/Photos/Horizontal/E-commerce/Vertical/12.jpg"
+                                                 class="card-img-top"
+                                                 alt="">
+                                            <a href="${item.get_absolute_url}">
+                                                <div class="mask rgba-white-slight"></div>
+                                            </a>
+                                        </div>
+
+                                        <div class="card-body text-center">
+                                            <a href="" class="grey-text">
+                                                <h5>${item.category}</h5>
+                                            </a>
+                                            <h5>
+                                                <strong>
+                                                    <a href="${item.get_absolute_url}}"
+                                                       class="dark-grey-text">${item.title}
+                                                        <span class="badge badge-pill ${item.get_label_display}-color">NEW</span>
+                                                    </a>
+                                                </strong>
+                                            </h5>
+
+                                            <h4 class="font-weight-bold blue-text">
+                                                <strong>
+                                                    ${item.price}$</strong>
+                                            </h4>
+
+                                        </div>
+
+                                    </div>
+                                </div>
+                            `
+                        })
+                    } else {
+                        if (searchInput.value.length > 0) {
+                            resultsBox.classList.add('d-none')
+                            results.classList.remove('d-none')
+                            card.innerHTML = `<b>${data}</b>`
+                        }
+                    }
+                },
+                error: (err) => {
+                    console.log(err)
+                }
+            })
+        }
+
+        searchInput.addEventListener('keyup', e => {
+            const result = e.target.value
+            if (result.length === 0) {
+                results.classList.add('d-none')
+                resultsBox.classList.remove('d-none')
+            }
+            sendSearchData(result)
+            card.innerHTML = ``
+
+        })
+    </script>
+{% endblock %}
+
+
